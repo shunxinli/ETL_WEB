@@ -436,8 +436,8 @@ const TaskAllocationModel = {
         cFieldOrder: "id, nadme, age, date",//字段映射，hdfs的不一样，细节再说
         dbwriteType: 6
       }
-    }
-
+    },
+    cParamData:[]
     
   },
   effects: {

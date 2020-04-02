@@ -33,6 +33,7 @@ class TaskAllocation extends Component {
             ReadType:"",
             WriteType:"",
             theDismask:false,
+            cParamVisible:false,
 
          }
     }
@@ -354,7 +355,23 @@ class TaskAllocation extends Component {
           }
         })
         
-      }
+    }
+    oncParamshowModel=()=>{
+      this.setState({
+        cParamVisible:true,
+      })
+    }
+    oncParamCancel=()=>{
+      const form = this.cParamform;
+      form.resetFields();
+      this.setState({
+        cParamVisible:false,
+      });
+    }
+    oncParamCreate=()=>{
+      const form = this.cParamform;
+
+    }
     saveTreeFormRef = (form) => {
         this.form1 = form;
     }
@@ -366,6 +383,9 @@ class TaskAllocation extends Component {
     }
     saveWSCFormRef= (form) => {
       this.WSCform = form;
+    }
+    savecParamFormRef= (form) => {
+      this.cParamform = form;
     }
     next=()=> {
         let {current,taskUplod} = this.state
@@ -784,9 +804,10 @@ class TaskAllocation extends Component {
     }
     
     render() {
-        const { current,showTask} = this.state;
+      const { current,showTask,cParamVisible} = this.state;
       const { treeFlag,treeData,QueryTreeList,BatchSize,Byte,Channel,Record,TasKData,HdfsEncod,HdfsFileTypeData,TDatasourceNoPageList,QueryTableList
         ,HafsWriteFieType,QueryWriteCompress,QueryWriteMode,
+        cParamData
       } = this.props;
       
         const loop = data =>
@@ -864,6 +885,7 @@ class TaskAllocation extends Component {
               QueryWriteMode={QueryWriteMode}
               thisObj={this}
               theDiled={this.state.theDiled}
+              oncParamshowModel={this.oncParamshowModel}
               />
           </div>,
           },
@@ -973,12 +995,52 @@ class TaskAllocation extends Component {
                             treeData={treeData}
                             thisObj={this}
                         />
+                        <CParamModel
+                            title="字段映射"
+                            visible={cParamVisible}
+                            onCancel={this.oncParamCancel}
+                            onCreate={this.oncParamCreate}
+                            ref={this.savecParamFormRef}
+                            cParamData={cParamData}
+                            thisObj={this}
+                        />
                     </Col>
                 </Row>
             </div> 
         );
     }
 }
+//字段映射的model
+
+class CParamModel extends React.Component {
+  state = {
+    value: undefined,
+  }
+  render(){
+    const { visible, onCancel, onCreate, form, title, systemMask, treeData, } = this.props;
+    return(
+      <Modal
+       visible={visible}
+       width={500}
+       title={title}
+       okText="确认"
+       onCancel={onCancel}
+       onOk={onCreate}
+       className="ant-advanced-search-form"
+       maskClosable={false}
+     >
+      <div style={{height:200,overflow:"auto"}}>
+      <Form
+         className="ant-advanced-search-form"
+       >
+       </Form>
+      </div>
+    </Modal>
+    )
+  }  
+
+}
+CParamModel = Form.create()(CParamModel)
  
 //树的model
 class TreeModel extends React.Component {
@@ -1539,7 +1601,7 @@ class WSCModel  extends React.Component {
   }
  
   render(){
-  const { visible, onCancel, onCreate, form, theDiled, HafsWriteFieType,QueryWriteCompress,QueryWriteMode, TDatasourceNoPageList, dispatch,QueryTableList } = this.props;
+  const { visible, onCancel, oncParamshowModel, form, theDiled, HafsWriteFieType,QueryWriteCompress,QueryWriteMode, TDatasourceNoPageList, dispatch,QueryTableList } = this.props;
    const { getFieldDecorator } = form;
    const formItemLayout = {
      labelCol: { span: 7 },
@@ -1617,9 +1679,9 @@ class WSCModel  extends React.Component {
               {getFieldDecorator('cFieldOrder', {
                  rules: [{ required: true, message: '请填写字段映射！' }]
               })(
-                <Input style={{width:"70%",marginRight:10}}/>
+                <Input style={{width:"60%",marginRight:10}}/>
               )}
-             <Button type="primary" onClick={()=>{}}>填写字段映射</Button>
+             <Button type="primary" onClick={oncParamshowModel}>填写字段映射</Button>
           </FormItem>
           {QueryWriteMode==null||QueryWriteMode.length==0?
                <FormItem {...formItemLayout} label="写入方式:">
