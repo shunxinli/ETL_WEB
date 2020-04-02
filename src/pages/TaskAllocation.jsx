@@ -1366,7 +1366,6 @@ class RSCModel  extends React.Component {
   };
 
   onRSCChange = (value,option) => {
-    console.log(option)
     let newvalue = option.ref.nDbType
     let {thisObj}=this.props
     if (newvalue==6) {
