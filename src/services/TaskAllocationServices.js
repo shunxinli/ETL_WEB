@@ -6,6 +6,13 @@ export async function getTree(params) {
     params: params,
   });
 }
+//查询系统和模块树
+export async function getOnlyBusinessTree(params) {
+  return request('/api/V1/etl/business/queryOnlyBusinessTree', {
+    method: 'GET',
+    params: params,
+  });
+}
 //新建树
 export async function createTree(params) {
   return request('/api/V1/etl/business/create', {
@@ -67,6 +74,13 @@ export async function getDataxRecord(params) {
 //获取cron表达式
 export async function getQueryCron(params) {
   return request('/api/V1/etl/extractionRule/queryCron', {
+    method: 'GET',
+    params: params,
+  });
+}
+//验证cron
+export async function getvalidCron(params) {
+  return request('/api/V1/etl/extractionRule/validCron', {
     method: 'GET',
     params: params,
   });

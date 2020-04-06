@@ -47,6 +47,10 @@ class TaskAllocation extends Component {
             selectedInfo:Info
           },()=>{
             if(this.state.selectedInfo.node.props.dataRef.nLevel==''||this.state.selectedInfo.node.props.dataRef.nLevel==null){
+              if(this.state.showTask==="start"){
+                message.warning("当前正在查看/增加一个任务！",4)
+                return
+              }
               this.showUpdateModal()
             }else{
              this.closeTheCreat()
@@ -63,6 +67,13 @@ class TaskAllocation extends Component {
             payload: {datas}
          }
         )
+        dispatch(
+          {
+            type:'TaskAllocationModel/getOnlyBusinessTree',
+            payload: {datas}
+         }
+        )
+       
     }
     closeTheCreat=()=>{
       this.setState({
@@ -246,9 +257,18 @@ class TaskAllocation extends Component {
         let {selectedInfo} = this.state  
         let {dispatch} = this.props
         if (!selectedInfo.selected) {
-          message.warning("请选择一个删除对象",4)
+          message.warning("请选择一个删除对象！",4)
           return
         }
+        if (selectedInfo.node.props.dataRef.nLevel==''||selectedInfo.node.props.dataRef.nLevel==null) {
+          null
+        }else{
+          if (!selectedInfo.node.props.dataRef.childrenList.length==0) {
+            message.warning("此删除对象包含模块或任务，不可直接删除！",4)
+            return
+          }
+        }
+       
       
         Modal.confirm({
           title: "操作",
@@ -273,6 +293,12 @@ class TaskAllocation extends Component {
               dispatch(
                 {
                   type:'TaskAllocationModel/getTreeData',
+                  payload: {datas}
+               }
+              )
+              dispatch(
+                {
+                  type:'TaskAllocationModel/getOnlyBusinessTree',
                   payload: {datas}
                }
               )
@@ -317,6 +343,12 @@ class TaskAllocation extends Component {
             dispatch(
               {
                 type:'TaskAllocationModel/getTreeData',
+                payload: {datas}
+             }
+            )
+            dispatch(
+              {
+                type:'TaskAllocationModel/getOnlyBusinessTree',
                 payload: {datas}
              }
             )
@@ -650,6 +682,12 @@ class TaskAllocation extends Component {
                 payload: {datas}
              }
             )
+            dispatch(
+              {
+                type:'TaskAllocationModel/getOnlyBusinessTree',
+                payload: {datas}
+             }
+            )
           }else if(mark==="ERR"){
             console.log('失败')
             this.setState({
@@ -740,25 +778,25 @@ class TaskAllocation extends Component {
               cName: DRCData.cName?DRCData.cName:null,
               nIfActivate: DRCData.nIfActivate==1?DRCData.nIfActivate:0, //是否激活 1是0不是
               nIfInvalid: DRCData.nIfInvalid==1?DRCData.nIfInvalid:0,//是否有效 1 是0不是
-              nLogRetainTime: DRCData.nLogRetainTime?DRCData.nLogRetainTime:null,// 日志保留时长
+              nLogRetainTime: DRCData.nLogRetainTime?DRCData.nLogRetainTime:"7",// 日志保留时长
               preTaskIds: DRCData.preTaskIds?DRCData.preTaskIds.join(","):null//选择的前置任务的cid 多个逗号分开传string
             },
             tExtractionRuleConfig:{
               nIfSchedule:DRCData.nIfSchedule==1?DRCData.nIfSchedule:0,   //是否定时 1是0不是
               cCron:DRCData.cCron?DRCData.cCron:null,  //cron表达式
               nBatchSize: DRCData.nBatchSize?DRCData.nBatchSize:null, //-次性写入大小
-              nChannel: DRCData.nChannel?DRCData.nChannel:null,      //线程 数
-              nByte: DRCData.nByte?DRCData.nByte:null,  //读取速率
-              nRecord: DRCData.nRecord?DRCData.nRecord:null,  //读取大小
+              nChannel: DRCData.nChannel?DRCData.nChannel:"3",      //线程 数
+              nByte: DRCData.nByte?DRCData.nByte:"1048576",  //读取速率
+              nRecord: DRCData.nRecord?DRCData.nRecord:"10000",  //读取大小
             },
            tReadConfig:{
             cDatasourceId:RSCData.cDatasourceId?RSCData.cDatasourceId:null,//"选择的数据源的id",
             cReadSqlMain:RSCData.cReadSqlMain?RSCData.cReadSqlMain:null , //写入端的sq1语句
             cParam: RSCData.cParam?RSCData.cParam:null,          //预留参数，先 暂时不传。
             cFilePath: RSCData.cFilePath?RSCData.cFilePath:null,        //文件路径
-            cFileType: RSCData.cFileType?RSCData.cFileType:null,      //文件类型
+            cFileType: RSCData.cFileType?RSCData.cFileType:"text",      //文件类型
             cFieldDelimiter: RSCData.cFieldDelimiter?RSCData.cFieldDelimiter:null,  //文件分割符
-            cEncoding: RSCData.cEncoding?RSCData.cEncoding:null,      //编码
+            cEncoding: RSCData.cEncoding?RSCData.cEncoding:"utf-8",      //编码
             dbReadType: this.state.ReadType!=""?this.state.ReadType:1
             },
             tWriteConfig:{
@@ -769,7 +807,7 @@ class TaskAllocation extends Component {
               cFieldOrder: valuedata.cFieldOrder,//字段映射，hdfs的不一样，细节再说
               cWriteMode: valuedata.cWriteMode, //写入方式
               cFilePath:  valuedata.cFilePath,  //文件路径
-              cFileType: valuedata.cFileType,  //文件类型
+              cFileType: valuedata.cFileType?valuedata.cFileType:"text",  //文件类型
               cFieldDelimiter:valuedata.cFieldDelimiter, //文件分割符
               cCompress: valuedata.cCompress,     //压缩方式
               dbWriteType: this.state.WriteType!=""?this.state.WriteType:1
@@ -781,9 +819,7 @@ class TaskAllocation extends Component {
           }
           //完成后提交
           dispatch({type: 'TaskAllocationModel/createTaskConfig', payload: { datas,callback}});
-                  
         }
-       
       })
     }    
     closeCreat=()=>{
@@ -794,12 +830,17 @@ class TaskAllocation extends Component {
     }
     goCreat=()=>{
       let {selectedInfo} = this.state
-        if (!selectedInfo.selected) {
+      if (!selectedInfo.selected) {
           message.warning("请选择一个所属系统或库",4)
           return
         }
       this.setState({
         showTask:"start"
+      },()=>{
+        const DRCform = this.DRCform;
+        DRCform.setFieldsValue({
+          cBusinessName:selectedInfo.node.props.dataRef.cName
+        })
       })
     }
     
@@ -807,7 +848,8 @@ class TaskAllocation extends Component {
       const { current,showTask,cParamVisible} = this.state;
       const { treeFlag,treeData,QueryTreeList,BatchSize,Byte,Channel,Record,TasKData,HdfsEncod,HdfsFileTypeData,TDatasourceNoPageList,QueryTableList
         ,HafsWriteFieType,QueryWriteCompress,QueryWriteMode,
-        cParamData
+        cParamData,
+        BusinessTreeData
       } = this.props;
       
         const loop = data =>
@@ -993,6 +1035,7 @@ class TaskAllocation extends Component {
                             ref={this.saveTreeFormRef}
                             systemMask={this.state.systemMask}
                             treeData={treeData}
+                            BusinessTreeData={BusinessTreeData}
                             thisObj={this}
                         />
                         <CParamModel
@@ -1056,7 +1099,7 @@ class TreeModel extends React.Component {
     })
 }
   render(){
-  const { visible, onCancel, onCreate, form, title, systemMask, treeData, } = this.props;
+  const { visible, onCancel, onCreate, form, title, systemMask, treeData,BusinessTreeData } = this.props;
    const { getFieldDecorator } = form;
    const formItemLayout = {
      labelCol: { span: 7 },
@@ -1120,7 +1163,7 @@ class TreeModel extends React.Component {
                     treeDefaultExpandAll
                     onSelect={this.onSelect}
                   >
-                     {loop(treeData)}
+                     {loop(BusinessTreeData)}
                    </TreeSelect>
                 )}
             </FormItem>
@@ -1136,6 +1179,7 @@ TreeModel = Form.create()(TreeModel)
 class DRCModel extends React.Component {
   state = {
     value: [],
+    cyclevalue:'',
     cyclevalueDisabled:false,
     json:[{rate:'minute',cycle:''},{rate:'hour',cycle:''},{rate:'day',cycle:''},{rate:'month',cycle:''}]
   };
@@ -1160,17 +1204,17 @@ class DRCModel extends React.Component {
     thisObj.setState({
         theDisabled:e.target.value==0?false:true
     })
+    if (e.target.value==0) {
+      this.props.form.setFieldsValue({
+        cCron:''
+      })
+    } 
 }
 
 onChangecycle=(e)=>{
     console.log('radio checked', e.target.value);
     this.setState({
-        cyclevalue: e.target.value,
-        cyclevalueDisabled:e.target.value==='a'?false:true,
-        radiogroupValue:'',
-    });
-    this.props.form.setFieldsValue({
-      cCron:''
+      cyclevalue: e.target.value,
     })
 }
 onChangegroup=(e)=>{
@@ -1209,19 +1253,26 @@ onChangeTheCustom=(value,type)=>{
     })
 }
 generateCron=()=>{
-  console.log(this.state.json)
+  console.log()
   let {dispatch} = this.props
+  let {cyclevalue} = this.state
   let datas={
-    json: JSON.stringify(this.state.json)
+    cron: cyclevalue
   }
   console.log(datas)
-  let callback =(data)=>{
-    this.props.form.setFieldsValue({
-      cCron: data 
-    })
+  let callback =(start)=>{
+      this.setState({
+        cyclevalue: '',
+      })
+      if (start==0) {
+        this.props.form.setFieldsValue({
+          cCron:''
+        })
+      } 
   }
+ 
   dispatch({
-      type: 'TaskAllocationModel/getQueryCron',
+      type: 'TaskAllocationModel/getvalidCron',
       payload: { datas,callback},
     })
 }
@@ -1323,7 +1374,7 @@ generateCron=()=>{
                         {getFieldDecorator('cCron', {
                         rules: [{ required:theDisabled?true:false, message: '请选择定时触发周期！' }]
                         })(
-                          <Input disabled={!theDisabled}/>   
+                          <Input disabled={!theDisabled} onChange={this.onChangecycle} onBlur={this.generateCron}/>   
                         )}
           </FormItem>
           <FormItem {...formItemLayout} label="一次性写入大小:">
@@ -1448,9 +1499,12 @@ class RSCModel  extends React.Component {
      wrapperCol: { span: 16 },
    };
    const infoText = (
-    <ul style={{width: 200, height: 60, overflow: "auto"}}>
-      <li><p>预留参数是否填写取决于第一步的是否定时触发</p></li>
-    </ul>
+    <ul style={{width: 400, height: 140, overflow: "auto"}}>
+      <li><p>  1.如果使用预留参数功能，请在读取SQL中填写占位符，格式：#`{`参数名`}`，   例如：select  id，#`{`name`}` from test where a>1 and b> #`{`b`}`.
+      </p></li>
+      <li><p> 2.如果已完成了读取SQL的占位符编写，请在预留参数框内填写上参数名，对应SQL中占位符，使用逗号分隔，例如：   name,length.
+      </p></li>
+      </ul>
   );
    return (
    
@@ -1569,28 +1623,40 @@ class WSCModel  extends React.Component {
     let theDatas ={
       dbWriteType:newvalue
     }
-    let callback=()=>{}
+    let callback=()=>{
+
+    }
+    let Tcallback=()=>{
+      if (newvalue==6) {
+        thisObj.setState({ theDiled:true ,
+          WriteType:option.ref.nDbType
+        });
+      }else{
+        thisObj.setState({ theDiled:false ,
+          WriteType:option.ref.nDbType
+        });
+      } 
+    }
+    this.props.form.setFieldsValue({
+      cTabName:'',
+      cWriteMode:'',
+    })
     //获取数据表
     dispatch({type: 'TaskAllocationModel/getQueryTable', payload: { datas,callback}});
     dispatch({
       type: 'TaskAllocationModel/getQueryWriteMode',
-      payload: { theDatas,callback},
+      payload: { theDatas,Tcallback},
     })
-    if (newvalue==6) {
-      thisObj.setState({ theDiled:true ,
-        WriteType:option.ref.nDbType
-      });
-    }else{
-      thisObj.setState({ theDiled:false ,
-        WriteType:option.ref.nDbType
-      });
-    } 
+  
   }
   getWritedata=(value)=>{
     let {dispatch} = this.props
     let datas={
       fileType:value
     }
+    this.props.form.setFieldsValue({
+      cCompress:''
+    })
     let callback =()=>{
     }
     dispatch({
@@ -1650,7 +1716,7 @@ class WSCModel  extends React.Component {
                           placeholder="选择数据表"
                           optionFilterProp="children"
                         >
-                        <Option key={"11111"} value="11111">默认数据表</Option>
+                        {/* <Option key={"11111"} value="11111">默认数据表</Option> */}
                         {QueryTableList.map((item,index)=>{
                                           return <Option key={item.key+index} value={item.tableName}>{item.tableName}</Option>
                                         })}:
@@ -1679,14 +1745,14 @@ class WSCModel  extends React.Component {
               {getFieldDecorator('cFieldOrder', {
                  rules: [{ required: true, message: '请填写字段映射！' }]
               })(
-                <Input style={{width:"60%",marginRight:10}}/>
+                // <Input style={{width:"60%",marginRight:10}}/>
+                <Input />
               )}
-             <Button type="primary" onClick={oncParamshowModel}>填写字段映射</Button>
+             {/* <Button type="primary" onClick={oncParamshowModel}>填写字段映射</Button> */}
           </FormItem>
           {QueryWriteMode==null||QueryWriteMode.length==0?
                <FormItem {...formItemLayout} label="写入方式:">
                       {getFieldDecorator('cWriteMode',{
-                      
                         })(
                             <Input/>
                         )}
@@ -1694,7 +1760,7 @@ class WSCModel  extends React.Component {
                  :
                  <FormItem {...formItemLayout} label="写入方式" >
                  {getFieldDecorator('cWriteMode',{
-                    rules: [{ required: true, message: '请选择写入方式！' }]
+                    
                  })(
                       <Select
                       showSearch
@@ -1702,9 +1768,9 @@ class WSCModel  extends React.Component {
                       placeholder="选择写入方式"
                       optionFilterProp="children"
                     >
-                    <Option key={"11111"} value="默认写入方式">默认写入方式</Option>
+                    {/* <Option key={"11111"} value="默认写入方式">默认写入方式</Option> */}
                        {QueryWriteMode.map((item,index)=>{
-                         return <Option key={item.key+index} value={item.tableName}>{item.tableName}</Option>
+                         return <Option key={item.cTypeId+index} value={item.cCode}>{item.cCodeName}</Option>
                        })}
                     </Select>
                     )}
@@ -1744,10 +1810,17 @@ class WSCModel  extends React.Component {
                     <Input/>
                   )}
                 </FormItem>
-              
-                <FormItem {...formItemLayout} label="压缩方式" >
+                {QueryWriteCompress.length==0?
+                  <FormItem {...formItemLayout} label="压缩方式" >
+                        {getFieldDecorator('cCompress',
+                         )(
+                            <Input/>
+                          )}
+                </FormItem>
+                  :
+                  <FormItem {...formItemLayout} label="压缩方式" >
                           {getFieldDecorator('cCompress',
-                            {rules: [{ required: true, message: '请选择压缩方式！' }]})(
+                            )(
                               <Select
                               showSearch
                               style={{ width: "100%" }}
@@ -1755,11 +1828,13 @@ class WSCModel  extends React.Component {
                               optionFilterProp="children"
                             >
                             {QueryWriteCompress.map((item,index)=>{
-                             return <Option key={item.key+index} value={item.tableName}>{item.tableName}</Option>
+                                return <Option key={item.cTypeId+index} value={item.cCode}>{item.cCodeName}</Option>
                               })}
                             </Select>
                             )}
                   </FormItem>
+                  }
+               
               </>
            :null}
           
@@ -1777,6 +1852,7 @@ export default connect((state)=>{
   return{
     treeFlag:state.TaskAllocationModel.treeFlag,
     treeData:state.TaskAllocationModel.treeData,
+    BusinessTreeData:state.TaskAllocationModel.BusinessTreeData,
     QueryTreeList:state.TaskAllocationModel.QueryTreeList,
     BatchSize:state.TaskAllocationModel.BatchSize,
     Byte:state.TaskAllocationModel.Byte,

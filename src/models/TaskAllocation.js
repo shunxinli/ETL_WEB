@@ -1,4 +1,4 @@
-import { getTree ,createTree,deleteTree,updateTree,
+import { getTree,getOnlyBusinessTree,createTree,deleteTree,updateTree,
   getQueryTreeList,
   getDataxBatchSize,
   getDataxByte,
@@ -6,6 +6,7 @@ import { getTree ,createTree,deleteTree,updateTree,
   getDataxChannel,
   createTaskConfig,
   getQueryCron,
+  getvalidCron,
   getHdfsReadFileType,
   getHdfsEncoding,
   getTDatasourceNoPageList,
@@ -103,7 +104,68 @@ const TaskAllocationModel = {
         
       }
     ]
-    ,QueryTreeList:[
+    ,
+    BusinessTreeData:[
+      {
+        key: "dbea00029e5947fdb677906a7939f033" ,
+        cId: "dbea00029e5947fdb677906a7939f033",
+        cPid: null,
+        cName:"业务系统一号",
+        nLevel: 1,
+        dtCreateDate: " 2020-02-20 12:16:08",
+        dtUpdateDate: "2020-02-20 12:16:08",
+        nState: 1,
+        taskList:{},
+        childrenList: [
+          {
+            key: "1544cd95987c4d8b8f1bb6e1191c50d2",
+            cId: "1544cd95987c4d8b8f1bb6e1191c50d2",
+            cPid: "dbea00029e5947fdb677906a7939f033" ,
+            cName:"模块1",
+            nLevel: 2,
+            dtCreateDate: "2020-02-2012:18:50",
+            dtUpdateDate:"2020-02-2012:18:50",
+            taskList:{
+              key: "dbea00029e5947fdb677906a7939f033" ,
+              cId: "dbea00029e5947fdb677906a7939f033",
+              cPid: null,
+              cName:"业务系统一号",
+              nLevel: 1,
+              dtCreateDate: " 2020-02-20 12:16:08",
+              dtUpdateDate: "2020-02-20 12:16:08",
+              nState: 1,
+            },
+            childrenList: [
+                            {
+                              key: "b674316ffb764d589be2fcc1cfff0d43",
+                              cId: "b674316ffb764d589be2fcc1cfff0d43",
+                              cPid: "1544cd95987c4d8b8f1bb6e1191c50d2" ,
+                              cName: "模块1.1",
+                              nLevel: 3,
+                              dtCreateDate: " 2020-02-2012:19:13",
+                              dtUpdateDate: " 2020-02-2012:19:44",
+                              nState: 1,
+                              childrenList: [
+                                
+                              ],
+                              taskList: {
+                                  key: "1544cd95987c4d8b8f1bb6e1191c50d2",
+                                  cId: "1544cd95987c4d8b8f1bb6e1191c50d2",
+                                  cPid: "dbea00029e5947fdb677906a7939f033" ,
+                                  cName:"模块1",
+                                  nLeve1: 2,
+                                  dtCreateDate: "2020-02-2012:18:50",
+                                  dtUpdateDate:"2020-02-2012:18:50",
+                                },
+                            },
+                    ],
+           
+          }
+      ]
+      
+    }
+    ],
+    QueryTreeList:[
         {
             cBusinessId: "",
              cBusinessName : "",
@@ -372,28 +434,9 @@ const TaskAllocationModel = {
     // ],
     QueryTableList:null,
     HafsWriteFieType:[
-      {
-        cTypeId: "100011",  //代码类型编号
-        cCode: "TEXT" ,     //代码
-        cCodeName: "TEXT" , //代码名称
-        nDisplayOrder: 1,   //显示顺序
-        dtCreateDate: null, //创建时间
-        dtUpdateDate: null, //最后修改时间
-        nState: 1           //状态.
-     },
-     {
-      cTypeId: "100012",  //代码类型编号
-      cCode: "ORC" ,     //代码
-      cCodeName: "ORC" , //代码名称
-      nDisplayOrder: 2,   //显示顺序
-      dtCreateDate: null, //创建时间
-      dtUpdateDate: null, //最后修改时间
-      nState: 1           //状态.
-     },
     ],
     QueryWriteCompress:[],
     QueryWriteMode:[],
-
     //完整的任务配置的数据
     SingleJson:{
       tTaskConfig: {
@@ -457,6 +500,21 @@ const TaskAllocationModel = {
       }
        
     },
+  //查询树
+  *getOnlyBusinessTree({payload:{ datas }},{ call, put, select }) {
+    const data = yield call(getOnlyBusinessTree,datas);
+    console.log(data) 
+    if(data.code === 200&&data.data!=[]){
+      yield put({ type: 'setBusinessTreeData', payload: {
+        BusinessTreeData: data.data
+      }});
+    }else {
+        message.error(data.message , 4);
+        console.log(data)
+  }
+   
+},
+  
 //新建树
     *createTree({payload:{ datas,callback }},{ call, put, select }) {
       console.log(datas) 
@@ -580,6 +638,24 @@ const TaskAllocationModel = {
           message.error(data.message , 4);
       }
     },
+    //验证cron
+    *getvalidCron({payload:{ datas,callback }},{ call, put, select }) {
+      console.log(datas) 
+      const data = yield call(getvalidCron,datas);
+      if(data.code === 200){
+          if(data.data){
+            message.success("cron验证成功！", 3);
+            callback(1);
+          }else{
+            message.error("cron验证失败请重新填写！" , 3);
+            callback(0);
+          }
+      }else {
+          message.error(data.message , 4);
+          callback(0);
+      }
+    },
+    
     //获取文件类型
     *getHdfsReadFileType({payload:{ datas,callback }},{ call, put, select }) {
       console.log(datas) 
@@ -663,16 +739,16 @@ const TaskAllocationModel = {
     },
     
      //获取写入端写入方式
-     *getQueryWriteMode({payload:{ theDatas,callback }},{ call, put, select }) {
+     *getQueryWriteMode({payload:{ theDatas,Tcallback }},{ call, put, select }) {
       console.log(theDatas) 
       const data = yield call(getQueryWriteMode,theDatas);
       if(data.code === 200){
           yield put({ type: 'setQueryWriteMode', payload:{QueryWriteMode:data.data}});
-          callback();
+          Tcallback();
       }else {
           message.error(data.message , 4);
           console.log(data)
-          callback();
+          Tcallback();
     }
     },
     //检验sql
@@ -750,6 +826,9 @@ const TaskAllocationModel = {
     },
     setTreeData(state, { payload: { treeData } }) {
       return { ...state, treeData };
+    },
+    setBusinessTreeData(state, { payload: { BusinessTreeData } }) {
+      return { ...state, BusinessTreeData };
     },
     setQueryTreeList(state, { payload: { QueryTreeList } }) {
       return { ...state, QueryTreeList };

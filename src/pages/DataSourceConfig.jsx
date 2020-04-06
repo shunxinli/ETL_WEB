@@ -200,7 +200,7 @@ class DataSourceConfig extends Component {
         this.setState({
           detailsSpinning:false
         })
-        }, 2000);
+        }, 800);
       });
      
     }
@@ -845,7 +845,7 @@ class TaskForm extends React.Component {
                 {getFieldDecorator('cPassword', {
                   rules: [{ required: true, message: '请输入密码!' }, { message: '请不要输入空白字符！', whitespace: true }],
                 })(
-                  <Input.Password />
+                  <Input.Password autoComplete="new-password"/>
                 )}
             </FormItem>
             </>
@@ -912,7 +912,7 @@ class TaskForm extends React.Component {
                     {getFieldDecorator('cMetadataPassword', {
                       rules: [{ required: true, message: '请输入密码!' }, { message: '请不要输入空白字符！', whitespace: true }],
                     })(
-                      <Input.Password />
+                      <Input.Password autoComplete="new-password"/>
 
                     )}
                 </FormItem>
@@ -957,6 +957,10 @@ class DrawerForm extends React.Component {
    const formItemLayout1 = {
     labelCol: { span: 8 },
     wrapperCol: { span: 12 },
+  };
+  const formItemLayout2 = {
+    labelCol: { span: 4 },
+    wrapperCol: { span: 18},
   };
    return (
       <div style={{marginTop:4,borderTop:1}}>
@@ -1060,7 +1064,7 @@ class DrawerForm extends React.Component {
                                   {getFieldDecorator('cPassword', {
                                     rules: [{ required: true, message: '请输入密码!' }, { message: '请不要输入空白字符！', whitespace: true }],
                                   })(
-                                <Input.Password disabled={visible}/>
+                                <Input.Password disabled={visible} autoComplete="new-password"/>
                                 
                                 )}
                             </FormItem>
@@ -1075,8 +1079,8 @@ class DrawerForm extends React.Component {
         </div>
        </Row> */}
        <Row span={24}>
-       <Col span={12}>
-                  <FormItem {...formItemLayout1} label="JDBC_URL:">
+       <Col span={24}>
+                  <FormItem {...formItemLayout2} label="JDBC_URL:">
                       {getFieldDecorator('jdbcUrl', {
                       rules: [{ required: true, message: '请填写URL！' }, { message: '请不要输入空白字符！', whitespace: true }]
                       })(
@@ -1084,10 +1088,7 @@ class DrawerForm extends React.Component {
                       )}
                   </FormItem>
         </Col>
-       <Col span={12}>
-       
-
-       </Col>
+      
        </Row>
        {cMetaState?
              <>
@@ -1150,7 +1151,7 @@ class DrawerForm extends React.Component {
                     {getFieldDecorator('cMetadataPassword', {
                       // rules: [{ required: true, message: '请输入密码!' }, { message: '请不要输入空白字符！', whitespace: true }],
                     })(
-                      <Input.Password disabled={visible}/>
+                      <Input.Password disabled={visible} autoComplete="new-password"/>
 
                     )}
                 </FormItem>
