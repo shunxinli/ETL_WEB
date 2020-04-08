@@ -17,7 +17,9 @@ import { getTree,getOnlyBusinessTree,createTree,deleteTree,updateTree,
   querySingleJson,
   uploadTaskConfig,
   deleteTask,
-  splitSqlCol
+  splitSqlCol,
+  TheSqlCol
+  
 } from '@/services/TaskAllocationServices';
 import {message} from 'antd';
 
@@ -480,7 +482,7 @@ const TaskAllocationModel = {
         dbwriteType: 6
       }
     },
-    cParamData:[]
+    cParamData:[],
     
   },
   effects: {
@@ -766,7 +768,18 @@ const TaskAllocationModel = {
           message.error(data.message , 4);
           console.log(data)
       }
-     
+    },
+    //获取sql
+    *getTheSqlCol({payload:{ datas,callback }},{ call, put, select }) {
+      console.log(datas) 
+      const data = yield call(TheSqlCol,datas);
+      if(data.code === 200){
+          yield put({ type: 'setTheSqlCol', payload:{cParamData:data.data}});
+          callback();
+      }else {
+          message.error(data.message , 4);
+          console.log(data)
+      }
     },
     
     //完成新增任务配置
@@ -871,6 +884,9 @@ const TaskAllocationModel = {
     setSingleJson(state, { payload: { SingleJson } }) {
       return { ...state, SingleJson };
     },
+    setTheSqlCol(state, { payload: { cParamData } }) {
+      return { ...state, cParamData };
+    }
     
   },
   subscriptions: {

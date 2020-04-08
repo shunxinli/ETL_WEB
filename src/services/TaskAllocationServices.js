@@ -175,8 +175,13 @@ export async function querySingleJson(params) {
     params: params,
   });
 }
-
-
+//字段映射
+export async function TheSqlCol(params){
+  return request('/api/V1/etl/write/splitSqlCol', {
+    method: 'GET',
+    params: params,
+  });
+}
 //编辑一条任务配置
 export async function uploadTaskConfig(params) {
   return request('/api/V1/etl/taskConfig/update', {

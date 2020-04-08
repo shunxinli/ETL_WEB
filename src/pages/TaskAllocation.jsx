@@ -389,9 +389,18 @@ class TaskAllocation extends Component {
         
     }
     oncParamshowModel=()=>{
-      this.setState({
-        cParamVisible:true,
-      })
+      let {dispatch} = this.props
+      let {RSCData,theDiled} = this.state
+      console.log(RSCData.cReadSqlMain,'看看sql')
+      let datas={
+        sql:RSCData.cReadSqlMain
+      }
+      const callback =()=>{
+        this.setState({
+          cParamVisible:true,
+        })
+      }
+      dispatch({type: 'TaskAllocationModel/getTheSqlCol', payload: { datas,callback}});
     }
     oncParamCancel=()=>{
       const form = this.cParamform;
@@ -401,8 +410,58 @@ class TaskAllocation extends Component {
       });
     }
     oncParamCreate=()=>{
+      let {theDiled} = this.state
       const form = this.cParamform;
+      form.validateFields((err, values) => {
+        console.log(err,values,'获取的hdfs')
+        let datas=changeStr(values)
+        if (err) {
+          return;
+        }
+        if(theDiled){
+          const aAry = [];
+          for (const key in datas) {
+            if (datas.hasOwnProperty(key)) {
+              if (key.indexOf("Type") < 0) {
+                console.log(key);
+                let keyType = `${key}Type`;
+                let obj = {
+                  name: datas[key],
+                  type: datas[keyType],
+                };
+                aAry.push(obj);
+              }
+            }
+          }
+          console.log(aAry)
+          console.log(JSON.stringify(aAry))
+          const WSCform = this.WSCform;
+          WSCform.setFieldsValue({
+            cFieldOrder:JSON.stringify(aAry)
+          })
 
+        }else{
+          const ary = [];
+          for (const key in datas) {
+            if (datas.hasOwnProperty(key)) {
+              ary.push(datas[key]);
+            }
+          }
+          console.log(ary.join(";"));
+          const WSCform = this.WSCform;
+          WSCform.setFieldsValue({
+            cFieldOrder:ary.join(";")
+          })
+        }
+
+        this.setState({
+          cParamVisible:false,
+        },()=>{
+          const form = this.cParamform;
+          form.resetFields();
+        });
+
+      })
     }
     saveTreeFormRef = (form) => {
         this.form1 = form;
@@ -1045,6 +1104,7 @@ class TaskAllocation extends Component {
                             onCreate={this.oncParamCreate}
                             ref={this.savecParamFormRef}
                             cParamData={cParamData}
+                            theDiled={this.state.theDiled}
                             thisObj={this}
                         />
                     </Col>
@@ -1060,7 +1120,13 @@ class CParamModel extends React.Component {
     value: undefined,
   }
   render(){
-    const { visible, onCancel, onCreate, form, title, systemMask, treeData, } = this.props;
+   const { visible, onCancel, onCreate, form, title, cParamData,theDiled } = this.props;
+   const { getFieldDecorator } = form;
+   const formItemLayout = {
+      labelCol: { span: 4 },
+      wrapperCol: { span: 18 },
+    };
+    const type = 6
     return(
       <Modal
        visible={visible}
@@ -1072,10 +1138,53 @@ class CParamModel extends React.Component {
        className="ant-advanced-search-form"
        maskClosable={false}
      >
-      <div style={{height:200,overflow:"auto"}}>
+      <div style={{height:300,overflow:"auto"}}>
       <Form
          className="ant-advanced-search-form"
        >
+       { cParamData.map((item,index)=> {
+          return<FormItem key={index} label={item} {...formItemLayout}>
+              <FormItem 
+               style={{ display:'inline-block', width: 'calc(50% - 8px)' }}
+               >
+                {getFieldDecorator(item, {
+                  rules: [{ required: true, message: '请填写对应内容!' }, { message: '请不要输入空白字符！', whitespace: true }],
+                })(
+                  <Input />
+                )}
+              
+              </FormItem>
+              {theDiled? <FormItem 
+               style={{ display: 'inline-block', width: 'calc(50% - 8px)' }}
+               >
+              {getFieldDecorator(item+"Type", {
+                  rules: [{ required: true, message: '请选择对应内容!' }],
+                })(
+                <Select
+                        showSearch
+                        style={{ width: "100%" }}
+                        placeholder="请选择"
+                        optionFilterProp="children"
+                      >
+                      <Option key={'1'} value={'TINYINT'}>TINYINT</Option>
+                      <Option key={'2'} value={'SMALLINT'}>SMALLINT</Option>
+                      <Option key={'3'} value={'INT'}>INT</Option>
+                      <Option key={'4'} value={'BIGINT'}>BIGINT</Option>
+                      <Option key={'5'} value={'FLOAT'}>FLOAT</Option>
+                      <Option key={'6'} value={'DOUBLE'}>DOUBLE</Option>
+                      <Option key={'7'} value={'CHAR'}>CHAR</Option>
+                      <Option key={'8'} value={'VARCHAR'}>VARCHAR</Option>
+                      <Option key={'9'} value={'STRING'}>STRING</Option>
+                      <Option key={'10'} value={'BOOLEAN'}>BOOLEAN</Option>
+                      <Option key={'11'} value={'DATE'}>DATE</Option>
+                      <Option key={'13'} value={'TIMESTAMP'}>TIMESTAMP</Option>
+                    </Select>
+                )}
+              </FormItem>
+              :null} 
+       </FormItem>
+        })
+      }
        </Form>
       </div>
     </Modal>
@@ -1500,10 +1609,13 @@ class RSCModel  extends React.Component {
    };
    const infoText = (
     <ul style={{width: 400, height: 140, overflow: "auto"}}>
-      <li><p>  1.如果使用预留参数功能，请在读取SQL中填写占位符，格式：#`{`参数名`}`，   例如：select  id，#`{`name`}` from test where a>1 and b> #`{`b`}`.
+      <li><p> 1.如果已配置了定时触发，则禁用预留参数功能。
       </p></li>
-      <li><p> 2.如果已完成了读取SQL的占位符编写，请在预留参数框内填写上参数名，对应SQL中占位符，使用逗号分隔，例如：   name,length.
+      <li><p> 2.如果使用预留参数功能，请在读取SQL中填写占位符，格式：&#123;参数名&#125;,   例如：select  id，#&#123;name&#125; from test where a>1 and b> #&#123;b&#125;.
       </p></li>
+      <li><p> 3.如果已完成了读取SQL的占位符编写，请在预留参数框内填写上参数名，对应SQL中占位符，使用逗号分隔，例如：   name,length.
+      </p></li>
+    
       </ul>
   );
    return (
@@ -1640,6 +1752,7 @@ class WSCModel  extends React.Component {
     this.props.form.setFieldsValue({
       cTabName:'',
       cWriteMode:'',
+      cFieldOrder:'',
     })
     //获取数据表
     dispatch({type: 'TaskAllocationModel/getQueryTable', payload: { datas,callback}});
@@ -1745,10 +1858,10 @@ class WSCModel  extends React.Component {
               {getFieldDecorator('cFieldOrder', {
                  rules: [{ required: true, message: '请填写字段映射！' }]
               })(
-                // <Input style={{width:"60%",marginRight:10}}/>
-                <Input />
+                <Input style={{width:"60%",marginRight:10}} disabled/>
+                // <Input />
               )}
-             {/* <Button type="primary" onClick={oncParamshowModel}>填写字段映射</Button> */}
+             <Button type="primary" onClick={oncParamshowModel}>填写字段映射</Button>
           </FormItem>
           {QueryWriteMode==null||QueryWriteMode.length==0?
                <FormItem {...formItemLayout} label="写入方式:">
@@ -1867,6 +1980,7 @@ export default connect((state)=>{
     QueryWriteCompress:state.TaskAllocationModel.QueryWriteCompress,
     QueryWriteMode:state.TaskAllocationModel.QueryWriteMode,
     SingleJson:state.TaskAllocationModel.SingleJson,
+    cParamData:state.TaskAllocationModel.cParamData,
 
   }
 })(TaskAllocation)
