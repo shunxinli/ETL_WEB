@@ -727,16 +727,16 @@ const TaskAllocationModel = {
     },
   
     //获取写入端压缩方式
-    *getQueryWriteCompress({payload:{ datas,callback }},{ call, put, select }) {
-      console.log(datas) 
-      const data = yield call(getQueryWriteCompress,datas);
+    *getQueryWriteCompress({payload:{ writedatas,writecallback }},{ call, put, select }) {
+      console.log(writedatas) 
+      const data = yield call(getQueryWriteCompress,writedatas);
       if(data.code === 200){
           yield put({ type: 'setQueryWriteCompress', payload:{QueryWriteCompress:data.data}});
-          callback();
+          writecallback();
       }else {
           message.error(data.message , 4);
           console.log(data)
-          callback();
+          writecallback();
     }
     },
     

@@ -29,6 +29,7 @@ class TaskAllocation extends Component {
             theDisabled: false,
             theRSCDisabled: false,
             theDiled: false,
+           cWriteDiled:false,
             cPdataRef:{},
             ReadType:"",
             WriteType:"",
@@ -83,6 +84,7 @@ class TaskAllocation extends Component {
         WSCData:{},
         showTask:"stateLess",
         theDiled:false,
+        cWriteDiled:false,
         theDismask:false,
         theRSCDisabled:false,
         current:0
@@ -177,6 +179,11 @@ class TaskAllocation extends Component {
             if (!selectedInfo.selected) {
               message.warning("请选择一个所属系统或库",4)
               return
+            }
+            if(this.state.showTask==="start"){
+              this.setState({
+                current:0
+              })
             }
             const datas = {
               // cBusinessId: selectedInfo.node.props.dataRef.cId
@@ -287,6 +294,7 @@ class TaskAllocation extends Component {
                 WSCData:{},
                 taskUplod:"",
                 theDiled:false,
+                cWriteDiled:false,
                 theRSCDisabled:false,
                 current:0
               })
@@ -390,7 +398,7 @@ class TaskAllocation extends Component {
     }
     oncParamshowModel=()=>{
       let {dispatch} = this.props
-      let {RSCData,theDiled} = this.state
+      let {RSCData} = this.state
       console.log(RSCData.cReadSqlMain,'看看sql')
       let datas={
         sql:RSCData.cReadSqlMain
@@ -545,8 +553,36 @@ class TaskAllocation extends Component {
                 if (taskUplod=='编辑') {
                   const WSCform = this.WSCform;
                   let newvalue= SingleJson.tWriteConfig.dbWriteType
+                  
                   if (newvalue==6) {
-                    this.setState({ theDiled:true },()=>{
+                    let datas={
+                      dbId:SingleJson.tWriteConfig.cDatasourceId
+                    }
+                   
+                    let callback=()=>{
+                    }
+                    let theDatas ={
+                      dbWriteType:newvalue
+                    }
+                    let Tcallback=()=>{
+                    }
+                    //获取数据表
+                    this.props.dispatch({type: 'TaskAllocationModel/getQueryTable', payload: { datas,callback}});
+                    this.props.dispatch({
+                      type: 'TaskAllocationModel/getQueryWriteMode',
+                      payload: { theDatas,Tcallback},
+                    })
+                    let writedatas={
+                      fileType:SingleJson.tWriteConfig.cFileType
+                    }
+                    let writecallback =()=>{
+                    }
+                    this.props.dispatch({
+                        type: 'TaskAllocationModel/getQueryWriteCompress',
+                        payload: { writedatas,writecallback},
+                      })
+                    this.setState({ theDiled:true,cWriteDiled:true },()=>{
+                      
                       WSCform.setFieldsValue({
                         cDatasourceId: SingleJson.tWriteConfig.cDatasourceId,
                         cTabName:  SingleJson.tWriteConfig.cTabName,
@@ -561,8 +597,33 @@ class TaskAllocation extends Component {
 
                       })
                     });
-                  }else{
-                    this.setState({ theDiled:false },()=>{
+                  }else if(newvalue==2){
+                    let theDatas ={
+                      dbWriteType:newvalue
+                    }
+                    let Tcallback=()=>{
+                    }
+                    this.props.dispatch({
+                      type: 'TaskAllocationModel/getQueryWriteMode',
+                      payload: { theDatas,Tcallback},
+                    })
+                    this.setState({ theDiled:false,cWriteDiled:true},()=>{
+                      WSCform.setFieldsValue({
+                        cDatasourceId: SingleJson.tWriteConfig.cDatasourceId,
+                        cTabName:  SingleJson.tWriteConfig.cTabName,
+                        cPreSql: SingleJson.tWriteConfig.cPreSql,
+                        cPostSql:  SingleJson.tWriteConfig.cPostSql,
+                        cFieldOrder: SingleJson.tWriteConfig.cFieldOrder,
+                        // cFileType:  SingleJson.tWriteConfig.cFileType,
+                        // cFilePath:  SingleJson.tWriteConfig.cFilePath,
+                        // cFieldDelimiter:  SingleJson.tWriteConfig.cFieldDelimiter,
+                        cWriteMode: SingleJson.tWriteConfig.cWriteMode,
+                        cCompress:  SingleJson.tWriteConfig.cCompress,
+                      })
+                    });
+                  }
+                  else{
+                    this.setState({ theDiled:false,cWriteDiled:false},()=>{
                       WSCform.setFieldsValue({
                         cDatasourceId: SingleJson.tWriteConfig.cDatasourceId,
                         cTabName:  SingleJson.tWriteConfig.cTabName,
@@ -730,6 +791,7 @@ class TaskAllocation extends Component {
               WSCData:{},
               taskUplod:"",
               theDiled:false,
+              cWriteDiled:false,
               theRSCDisabled:false,
               theDismask:false,
               current:0
@@ -986,6 +1048,7 @@ class TaskAllocation extends Component {
               QueryWriteMode={QueryWriteMode}
               thisObj={this}
               theDiled={this.state.theDiled}
+              cWriteDiled={this.state.cWriteDiled}
               oncParamshowModel={this.oncParamshowModel}
               />
           </div>,
@@ -1123,14 +1186,14 @@ class CParamModel extends React.Component {
    const { visible, onCancel, onCreate, form, title, cParamData,theDiled } = this.props;
    const { getFieldDecorator } = form;
    const formItemLayout = {
-      labelCol: { span: 4 },
-      wrapperCol: { span: 18 },
+      labelCol: { span: 5 },
+      wrapperCol: { span: 19 },
     };
     const type = 6
     return(
       <Modal
        visible={visible}
-       width={500}
+       width={600}
        title={title}
        okText="确认"
        onCancel={onCancel}
@@ -1722,7 +1785,6 @@ RSCModel = Form.create()(RSCModel)
 class WSCModel  extends React.Component {
   state = {
     value: undefined,
-    theDiled:false,
   };
 
   onChange = (value,option) => {
@@ -1741,10 +1803,18 @@ class WSCModel  extends React.Component {
     let Tcallback=()=>{
       if (newvalue==6) {
         thisObj.setState({ theDiled:true ,
+          cWriteDiled:true ,
           WriteType:option.ref.nDbType
         });
-      }else{
+      }else if (newvalue==2) {
         thisObj.setState({ theDiled:false ,
+          cWriteDiled:true ,
+          WriteType:option.ref.nDbType
+        });
+      }
+      else{
+        thisObj.setState({ theDiled:false ,
+          cWriteDiled:false ,
           WriteType:option.ref.nDbType
         });
       } 
@@ -1764,23 +1834,23 @@ class WSCModel  extends React.Component {
   }
   getWritedata=(value)=>{
     let {dispatch} = this.props
-    let datas={
+    let writedatas={
       fileType:value
     }
     this.props.form.setFieldsValue({
       cCompress:''
     })
-    let callback =()=>{
+    let writecallback =()=>{
     }
     dispatch({
         type: 'TaskAllocationModel/getQueryWriteCompress',
-        payload: { datas,callback},
+        payload: { writedatas,writecallback},
       })
     
   }
  
   render(){
-  const { visible, onCancel, oncParamshowModel, form, theDiled, HafsWriteFieType,QueryWriteCompress,QueryWriteMode, TDatasourceNoPageList, dispatch,QueryTableList } = this.props;
+  const { visible, cWriteDiled, oncParamshowModel, form, theDiled, HafsWriteFieType,QueryWriteCompress,QueryWriteMode, TDatasourceNoPageList, dispatch,QueryTableList } = this.props;
    const { getFieldDecorator } = form;
    const formItemLayout = {
      labelCol: { span: 7 },
@@ -1829,7 +1899,6 @@ class WSCModel  extends React.Component {
                           placeholder="选择数据表"
                           optionFilterProp="children"
                         >
-                        {/* <Option key={"11111"} value="11111">默认数据表</Option> */}
                         {QueryTableList.map((item,index)=>{
                                           return <Option key={item.key+index} value={item.tableName}>{item.tableName}</Option>
                                         })}:
@@ -1858,40 +1927,47 @@ class WSCModel  extends React.Component {
               {getFieldDecorator('cFieldOrder', {
                  rules: [{ required: true, message: '请填写字段映射！' }]
               })(
-                <Input style={{width:"60%",marginRight:10}} disabled/>
+                <Input.TextArea autoSize style={{width:"60%",marginRight:10}} disabled/>
                 // <Input />
               )}
              <Button type="primary" onClick={oncParamshowModel}>填写字段映射</Button>
           </FormItem>
-          {QueryWriteMode==null||QueryWriteMode.length==0?
-               <FormItem {...formItemLayout} label="写入方式:">
-                      {getFieldDecorator('cWriteMode',{
-                        })(
-                            <Input/>
-                        )}
-                </FormItem>
-                 :
-                 <FormItem {...formItemLayout} label="写入方式" >
-                 {getFieldDecorator('cWriteMode',{
-                    
-                 })(
-                      <Select
-                      showSearch
-                      style={{ width: "100%" }}
-                      placeholder="选择写入方式"
-                      optionFilterProp="children"
-                    >
-                    {/* <Option key={"11111"} value="默认写入方式">默认写入方式</Option> */}
-                       {QueryWriteMode.map((item,index)=>{
-                         return <Option key={item.cTypeId+index} value={item.cCode}>{item.cCodeName}</Option>
-                       })}
-                    </Select>
-                    )}
-               </FormItem>
-            }
         
+          {
+           cWriteDiled ?
+            <>
+            {QueryWriteMode==null||QueryWriteMode.length==0?
+              <FormItem {...formItemLayout} label="写入方式:">
+                     {getFieldDecorator('cWriteMode',{
+                       })(
+                           <Input/>
+                       )}
+               </FormItem>
+                :
+                <FormItem {...formItemLayout} label="写入方式" >
+                {getFieldDecorator('cWriteMode',{
+                   rules: [{ required: true, message: '请选择写入方式！' }]
+                })(
+                     <Select
+                     showSearch
+                     style={{ width: "100%" }}
+                     placeholder="选择写入方式"
+                     optionFilterProp="children"
+                   >
+                      {QueryWriteMode.map((item,index)=>{
+                        return <Option key={item.cTypeId+index} value={item.cCode}>{item.cCodeName}</Option>
+                      })}
+                   </Select>
+                   )}
+              </FormItem>
+           }
+            </>
+            :null
+
+          }
           {theDiled?
                 <>
+             
                  <FormItem {...formItemLayout} label="文件类型" >
                           {getFieldDecorator('cFileType',
                             {rules: [{ required: true, message: '请选择文件类型！' }]})(
@@ -1923,7 +1999,7 @@ class WSCModel  extends React.Component {
                     <Input/>
                   )}
                 </FormItem>
-                {QueryWriteCompress.length==0?
+                {QueryWriteCompress==null||QueryWriteCompress.length==0?
                   <FormItem {...formItemLayout} label="压缩方式" >
                         {getFieldDecorator('cCompress',
                          )(
