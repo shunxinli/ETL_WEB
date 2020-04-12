@@ -153,7 +153,13 @@ export async function getQueryWriteMode(params) {
     params: params,
   });
 }
-
+//获取hdfs_Sql
+export async function generateHdfsSql(params) {
+  return request('/api/V1/etl/read/generateHdfsSql', {
+    method: 'GET',
+    params: params,
+  });
+}
 //检验sql
 export async function splitSqlCol(params) {
   return request('/api/V1/etl/read/checkSql', {

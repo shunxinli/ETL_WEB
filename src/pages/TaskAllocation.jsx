@@ -87,6 +87,7 @@ class TaskAllocation extends Component {
         cWriteDiled:false,
         theDismask:false,
         theRSCDisabled:false,
+        theDisabled:false,
         current:0
       })
     }
@@ -122,9 +123,7 @@ class TaskAllocation extends Component {
           }
         })
       }
-    saveFormRef = (form) => {
-        this.form = form;
-      }
+   
     showAddModal=(show)=>{
         let {selectedInfo} = this.state
         if (show) {
@@ -834,8 +833,8 @@ class TaskAllocation extends Component {
         }
      
         if (taskUplod=='编辑') {
-          console.log('dbReadType',this.state.ReadType,SingleJson.tReadConfig.ReadType)
-          console.log('dbWriteType',this.state.WriteType,SingleJson.tWriteConfig.WriteType)
+          console.log('dbReadType',this.state.ReadType,SingleJson.tReadConfig.dbReadType)
+          console.log('dbWriteType',this.state.WriteType,SingleJson.tWriteConfig.dbWriteType)
           const Thedatas = {
             tTaskConfig:{
               cId:SingleJson.tTaskConfig.cId,
@@ -851,7 +850,7 @@ class TaskAllocation extends Component {
             cId:SingleJson.tExtractionRuleConfig.cId,
             cTaskConfigId:SingleJson.tExtractionRuleConfig.cTaskConfigId,
             nIfSchedule: DRCData.nIfSchedule==1?DRCData.nIfSchedule:0,   //是否定时 1是0不是
-            cCron:DRCData.cCron?DRCData.cCron:SingleJson.tExtractionRuleConfig.cCron,  //cron表达式
+            cCron:DRCData.cCron||DRCData.cCron==""?DRCData.cCron:SingleJson.tExtractionRuleConfig.cCron,  //cron表达式
             nBatchSize: DRCData.nBatchSize?DRCData.nBatchSize:SingleJson.tExtractionRuleConfig.nBatchSize, //-次性写入大小
             nChannel: DRCData.nChannel?DRCData.nChannel:SingleJson.tExtractionRuleConfig.nChannel,      //线程 数
             nByte: DRCData.nByte?DRCData.nByte:SingleJson.tExtractionRuleConfig.nByte,  //读取速率
@@ -862,7 +861,7 @@ class TaskAllocation extends Component {
             cTaskConfigId:SingleJson.tReadConfig.cTaskConfigId,
             cDatasourceId:RSCData.cDatasourceId?RSCData.cDatasourceId:SingleJson.tReadConfig.cDatasourceId,//"选择的数据源的id",
             cReadSqlMain:RSCData.cReadSqlMain?RSCData.cReadSqlMain:SingleJson.tReadConfig.cReadSqlMain , //写入端的sq1语句
-            cParam: RSCData.cParam?RSCData.cParam:SingleJson.tReadConfig.cParam,          //预留参数，先 暂时不传。
+            cParam: RSCData.cParam||RSCData.cParam==""?RSCData.cParam:SingleJson.tReadConfig.cParam,          //预留参数，先 暂时不传。
             cFilePath: RSCData.cFilePath?RSCData.cFilePath:SingleJson.tReadConfig.cFilePath,        //文件路径
             cFileType: RSCData.cFileType?RSCData.cFileType:SingleJson.tReadConfig.cFileType,      //文件类型
             cFieldDelimiter: RSCData.cFieldDelimiter?RSCData.cFieldDelimiter:SingleJson.tReadConfig.cFieldDelimiter,  //文件分割符
@@ -875,8 +874,8 @@ class TaskAllocation extends Component {
               cDbName:SingleJson.tWriteConfig.cDbName,
               cDatasourceId: valuedata.cDatasourceId? valuedata.cDatasourceId:SingleJson.tWriteConfig.cDatasourceId,//"选择的数据源的id",
               cTabName:valuedata.cTabName? valuedata.cTabName:SingleJson.tWriteConfig.cTabName,//"表名",
-              cPreSql: valuedata.cPreSql? valuedata.cPreSql:SingleJson.tWriteConfig.cPreSql,   //写入前sq1
-              cPostSql:  valuedata.cPostSql? valuedata.cPostSql:SingleJson.tWriteConfig.cPostSql,  //写入后sq1
+              cPreSql: valuedata.cPreSql||valuedata.cPreSql==""? valuedata.cPreSql:SingleJson.tWriteConfig.cPreSql,   //写入前sq1
+              cPostSql:  valuedata.cPostSql||valuedata.cPostSql==""? valuedata.cPostSql:SingleJson.tWriteConfig.cPostSql,  //写入后sq1
               cFieldOrder: valuedata.cFieldOrder? valuedata.cFieldOrder:SingleJson.tWriteConfig.cFieldOrder,//字段映射，hdfs的不一样，细节再说
               cWriteMode: valuedata.cWriteMode? valuedata.cWriteMode:SingleJson.tWriteConfig.cWriteMode,//写入方式
               cFilePath:  valuedata.cFilePath? valuedata.cFilePath:SingleJson.tWriteConfig.cFilePath, //文件路径
@@ -1030,6 +1029,7 @@ class TaskAllocation extends Component {
               theRSCDisabled={this.state.theRSCDisabled}
               theDismask={this.state.theDismask}
               TDatasourceNoPageList={TDatasourceNoPageList}
+              dispatch={this.props.dispatch}
             />
 
           </div>,
@@ -1257,6 +1257,185 @@ class CParamModel extends React.Component {
 }
 CParamModel = Form.create()(CParamModel)
  
+//读取端SQL的model
+class ReadSqlModel extends React.Component {
+    state = {
+      selectkey: [],
+      selectedRows: [],
+      svisible:false,
+    }
+    saveFormRef = (form) => {
+      this.form = form;
+    }
+    showModal = () => {
+      this.setState({ svisible: true });
+    }
+    handleCancel = () => {
+        const form = this.form;
+        form.resetFields();
+        this.setState({ svisible: false,});
+    }
+    handleCreate = () => {
+      const {_this} = this.props
+      const form = this.form;
+      form.validateFields((err, values) => {
+        if (err) {
+          return;
+        }
+        console.log(values,'values');
+        values.key = values.index+'b1'
+        let cReadSqlData=[..._this.state.cReadSqlData,values]
+        console.log(cReadSqlData,'cReadSqlData');
+        _this.setState({
+            cReadSqlData:cReadSqlData
+        },()=>{
+            form.resetFields();
+            this.setState({ svisible: false});
+        })
+      });
+    }
+    showConfirm=()=> {
+      const {_this} = this.props
+      const {selectkey} = this.state
+      if(selectkey.length == 0){
+        message.error('请选择一条数据',3)
+        return 
+      }else if(selectkey.length > 1){
+        message.error('一次只能删除一条数据',3)
+        return
+      }
+      Modal.confirm({
+        title: '确定删除选中的内容吗?',
+        onOk:()=> {
+        console.log(selectkey)
+          let cReadSqlData=_this.state.cReadSqlData.filter((item)=>{
+          return item.key!==selectkey[0]
+          })
+          console.log(cReadSqlData)
+          _this.setState({
+            cReadSqlData:cReadSqlData
+          },()=>{
+            this.setState({
+              selectkey:[],
+              selectedRows:[]
+           })
+          })
+        
+        },
+        onCancel() {},
+      });
+    }
+  render(){
+   const { visible, onCancel, onCreate, _this, title, } = this.props;
+  
+    const columns = [
+      { title: 'index', width: 200,  dataIndex: 'index', key: 'index',},
+      { title: 'type', width: 200, dataIndex: 'type', key: 'type'},
+  ];
+  const rowSelection = {
+    selectedRowKeys:this.state.selectkey,
+    onChange: (selectedRowKeys, selectedRows) => {
+        console.log(selectedRowKeys, selectedRows)
+        this.setState({
+            selectkey:selectedRowKeys,
+            selectedRows:selectedRows
+        })
+    },
+}
+    return(
+      <Modal
+       visible={visible}
+       width={800}
+       title={title}
+       okText="确认"
+       onCancel={onCancel}
+       onOk={onCreate}
+       className="ant-advanced-search-form"
+       maskClosable={false}
+     >
+        <div style={{width:'100%',height:30}}>
+          <div style={{float:'right'}}>
+                <a type="primary" style={{marginRight:10}} onClick={this.showModal}>新建</a>                     
+                <a type="primary" style={{marginRight:10}} onClick={this.showConfirm}>删除</a>
+          </div>
+        </div>
+      <Table columns={columns} rowSelection={rowSelection} dataSource={_this.state.cReadSqlData} onChange={this.changePage}/>
+      <SubjectForm
+              ref={this.saveFormRef}
+              svisible={this.state.svisible}
+              onCancel={this.handleCancel}
+              onCreate={this.handleCreate}
+            />
+    </Modal>
+    )
+  }  
+
+}
+ReadSqlModel = Form.create()(ReadSqlModel)
+//添加的from
+class SubjectForm extends Component {
+  constructor(props) {
+      super(props);
+      this.state = { 
+       }
+  }
+  render() { 
+          const { svisible, onCancel, onCreate, form} = this.props;
+          const { getFieldDecorator } = form;
+          const formItemLayout = {
+              labelCol: { span: 5 },
+              wrapperCol: { span: 17},
+          };
+        return ( 
+          <Modal
+              title='新增'
+              okText="确定"
+              onCancel={onCancel}
+              onOk={onCreate}
+              // className='allModal'
+              visible={svisible}
+              width= {600}
+          >
+            <Form>
+                    <FormItem {...formItemLayout} label="index">
+                              {getFieldDecorator('index', {rules: [{ required: true, message: '请填写字段索引值、字符串常量、预留参数其中一种!' }],})(
+                                <Input placeholder="请填写字段索引值、字符串常量、预留参数其中一种!"
+                                />
+                              )}
+                       </FormItem> 
+                   
+                    <FormItem {...formItemLayout} label="type">
+                              {getFieldDecorator('type', {rules: [{ required: true, message: '请输入type！' }],})(
+                               <Select
+                                    showSearch
+                                    style={{ width: "100%" }}
+                                    placeholder="请选择"
+                                    optionFilterProp="children"
+                                  >
+                                  <Option key={'1'} value={'TINYINT'}>TINYINT</Option>
+                                  <Option key={'2'} value={'SMALLINT'}>SMALLINT</Option>
+                                  <Option key={'3'} value={'INT'}>INT</Option>
+                                  <Option key={'4'} value={'BIGINT'}>BIGINT</Option>
+                                  <Option key={'5'} value={'FLOAT'}>FLOAT</Option>
+                                  <Option key={'6'} value={'DOUBLE'}>DOUBLE</Option>
+                                  <Option key={'7'} value={'CHAR'}>CHAR</Option>
+                                  <Option key={'8'} value={'VARCHAR'}>VARCHAR</Option>
+                                  <Option key={'9'} value={'STRING'}>STRING</Option>
+                                  <Option key={'10'} value={'BOOLEAN'}>BOOLEAN</Option>
+                                  <Option key={'11'} value={'DATE'}>DATE</Option>
+                                  <Option key={'13'} value={'TIMESTAMP'}>TIMESTAMP</Option>
+                                </Select>
+                              )}
+                    </FormItem>
+
+            </Form>
+          </Modal>
+
+       );
+  }
+}
+SubjectForm = Form.create()(SubjectForm);
+
 //树的model
 class TreeModel extends React.Component {
   state = {
@@ -1347,6 +1526,7 @@ class TreeModel extends React.Component {
  }
 }
 TreeModel = Form.create()(TreeModel)
+
 //DRCModel第一步
 class DRCModel extends React.Component {
   state = {
@@ -1389,41 +1569,9 @@ onChangecycle=(e)=>{
       cyclevalue: e.target.value,
     })
 }
-onChangegroup=(e)=>{
-    console.log('radio checked',  e.target.value);
-    const Carn ={
-        // a:'0 0 0 1 1 ?',
-        b:'0 0 0 1 1/1 ?',
-        c:'0 0 0 ? * 1',
-        d:'0 0 0 1/1 * ?',
-        e:'0 0 0/1 * * ?'
-    }
-    this.setState({
-      radiogroupValue: e.target.value
-     });
-    this.props.form.setFieldsValue({
-      cCron: Carn[e.target.value]
-    })
-}
-replacepos=(text,start,stop,replacetext)=>{
-     let mystr = text.substring(0,stop-1)+replacetext+text.substring(stop+1);
-      return mystr;
-}
-onChangeTheCustom=(value,type)=>{
-    console.log(value,type)
-    let {json} = this.state
-    if(!value) return
-    let newJson = json.map((item,index)=>{
-        if(item.rate===type){
-          item.cycle=value.toString()
-        }
-        return item
-      })
-    this.setState({
-      json:newJson
-    },()=>{
-    })
-}
+
+
+
 generateCron=()=>{
   console.log()
   let {dispatch} = this.props
@@ -1648,8 +1796,47 @@ DRCModel = Form.create()(DRCModel)
 class RSCModel  extends React.Component {
   state = {
     value: undefined,
+    cReadSqlVisible:false,
+    cReadSqlData:[]
   };
+  oncReadSqlshowModel=()=>{
+    this.setState({
+      cReadSqlVisible:true
+    })
+  }
+  onReadSqlCancel=()=>{
+    this.setState({
+        cReadSqlData:[],
+        cReadSqlVisible:false
+    })
+  }
+  onReadSqlCreate=()=>{
+    let {cReadSqlData} = this.state
+    console.log(cReadSqlData)
+    let {dispatch} =this.props
+    let datas = {
+      json:JSON.stringify(cReadSqlData)
+    }
+    let callback= (data)=>{
+        this.props.form.setFieldsValue({
+            cReadSqlMain:data
+        })
+        this.setState({
+        cReadSqlData:[],
+        cReadSqlVisible:false
+        })
+    }
+    dispatch({
+      type: 'TaskAllocationModel/generateHdfsSql',
+      payload: { datas,callback},
+    })
+  
 
+  
+  }
+  saveReadSqlFormRef= (form) => {
+    this.form = form;
+  }
   onRSCChange = (value,option) => {
     let newvalue = option.ref.nDbType
     let {thisObj}=this.props
@@ -1661,7 +1848,10 @@ class RSCModel  extends React.Component {
       thisObj.setState({ theRSCDisabled:false,
         ReadType:option.ref.nDbType
       });
-    } 
+    }
+    this.props.form.setFieldsValue({
+      cReadSqlMain:""
+  }) 
   }
   render(){
   const { HdfsEncod,HdfsFileTypeData,TDatasourceNoPageList, form, theDismask, theRSCDisabled, thisObj, dispatch,cyclevalueDisabled } = this.props;
@@ -1705,15 +1895,25 @@ class RSCModel  extends React.Component {
           </FormItem>
           <FormItem {...formItemLayout} label="读取端SQL:">
               {getFieldDecorator('cReadSqlMain',{
-              rules: [{ required: true, message: '请填写读取端SQL！' }]
+              rules: [{ required: true, message: '填写读取端SQL！' }]
               })(
-                <Input.TextArea autoSize />
+                // <Input.TextArea autoSize />
+                <Input.TextArea 
+                autoSize style={{width:"70%",marginRight:10}} disabled={theRSCDisabled}/>
               )}
+             <Button type="primary" onClick={this.oncReadSqlshowModel} disabled={!theRSCDisabled}>填写读取端SQL</Button>
+             <ReadSqlModel
+                            title="读取端SQL"
+                            visible={this.state.cReadSqlVisible}
+                            onCancel={this.onReadSqlCancel}
+                            onCreate={this.onReadSqlCreate}
+                            cReadSqlData={this.state.cReadSqlData}
+                            _this={this}
+                        />
           </FormItem>
           
           <FormItem {...formItemLayout} label="预留参数:">
               {getFieldDecorator('cParam',{
-              // rules: [{ required: true, message: '请填写预留参数！' }]
               })(
                 <Input disabled={theDismask} style={{width:"70%",marginRight:10}}/>   
               )}
@@ -1915,9 +2115,9 @@ class WSCModel  extends React.Component {
                 <Input.TextArea autoSize/>
               )}
           </FormItem>
-          <FormItem {...formItemLayout} label="写入后后执行SQL:">
+          <FormItem {...formItemLayout} label="写入后执行SQL:">
            {getFieldDecorator('cPostSql',{
-              // rules: [{ required: true, message: '请填写写入后后执行SQL！' }]
+              // rules: [{ required: true, message: '请填写写入后执行SQL！' }]
               })(
                 <Input.TextArea autoSize />
               )}
@@ -1927,7 +2127,7 @@ class WSCModel  extends React.Component {
               {getFieldDecorator('cFieldOrder', {
                  rules: [{ required: true, message: '请填写字段映射！' }]
               })(
-                <Input.TextArea autoSize style={{width:"60%",marginRight:10}} disabled/>
+                <Input.TextArea autoSize style={{width:"70%",marginRight:10}} disabled/>
                 // <Input />
               )}
              <Button type="primary" onClick={oncParamshowModel}>填写字段映射</Button>

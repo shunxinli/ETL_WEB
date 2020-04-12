@@ -18,7 +18,8 @@ import { getTree,getOnlyBusinessTree,createTree,deleteTree,updateTree,
   uploadTaskConfig,
   deleteTask,
   splitSqlCol,
-  TheSqlCol
+  TheSqlCol,
+  generateHdfsSql
   
 } from '@/services/TaskAllocationServices';
 import {message} from 'antd';
@@ -781,6 +782,18 @@ const TaskAllocationModel = {
           console.log(data)
       }
     },
+    //
+    *generateHdfsSql({payload:{ datas,callback }},{ call, put, select }) {
+      console.log(datas) 
+      const data = yield call(generateHdfsSql,datas);
+      if(data.code === 200){
+          callback(data.data);
+      }else {
+          message.error(data.message , 4);
+          console.log(data)
+      }
+    },
+    
     
     //完成新增任务配置
     *createTaskConfig({payload:{ datas,callback }},{ call, put, select }) {
